@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { adminDb, cleanUndefinedDeep } from './_firebaseAdmin';
+import { cleanUndefinedDeep, getAdminDb } from './_firebaseAdmin';
 
 const isObject = (value: unknown): value is Record<string, unknown> => (
   typeof value === 'object' && value !== null && !Array.isArray(value)
@@ -27,6 +27,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const payload = isObject(req.body) ? req.body : {};
     validatePayload(payload);
 
+    const adminDb = getAdminDb();
     const batch = adminDb.batch();
     batch.set(adminDb.collection('SliceBotMetrics').doc('main'), cleanUndefinedDeep(payload.metrics), { merge: true });
 
@@ -41,7 +42,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     await batch.commit();
     return res.status(200).json({ ok: true });
   } catch (error) {
+    console.error('Error saving chat history:', error);
     const message = error instanceof Error ? error.message : 'No se pudo guardar el historial.';
-    return res.status(400).json({ error: message });
+    return res.status(500).json({ error: message });
   }
 }

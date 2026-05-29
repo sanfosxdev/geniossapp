@@ -1,38 +1,46 @@
 import { cert, getApps, initializeApp } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
-import { getFirestore } from 'firebase-admin/firestore';
+import { getFirestore, type Firestore } from 'firebase-admin/firestore';
 import type { VercelRequest } from '@vercel/node';
 
 const getServiceAccount = () => {
   const encoded = process.env.FIREBASE_SERVICE_ACCOUNT_BASE64;
   const raw = process.env.FIREBASE_SERVICE_ACCOUNT_JSON || process.env.FIREBASE_SERVICE_ACCOUNT;
 
-  if (encoded) {
-    return JSON.parse(Buffer.from(encoded, 'base64').toString('utf8'));
+  const serviceAccount = encoded
+    ? JSON.parse(Buffer.from(encoded, 'base64').toString('utf8'))
+    : raw
+      ? JSON.parse(raw)
+      : null;
+
+  if (!serviceAccount) {
+    throw new Error('Missing FIREBASE_SERVICE_ACCOUNT_BASE64, FIREBASE_SERVICE_ACCOUNT_JSON, or FIREBASE_SERVICE_ACCOUNT.');
   }
 
-  if (raw) {
-    return JSON.parse(raw);
+  if (typeof serviceAccount.private_key === 'string') {
+    serviceAccount.private_key = serviceAccount.private_key.replace(/\\n/g, '\n');
   }
 
-  throw new Error('Missing FIREBASE_SERVICE_ACCOUNT_BASE64, FIREBASE_SERVICE_ACCOUNT_JSON, or FIREBASE_SERVICE_ACCOUNT.');
+  return serviceAccount;
 };
 
-const app = getApps().length > 0
-  ? getApps()[0]
-  : initializeApp({
-      credential: cert(getServiceAccount()),
-    });
+const getAdminApp = () => (
+  getApps().length > 0
+    ? getApps()[0]
+    : initializeApp({
+        credential: cert(getServiceAccount()),
+      })
+);
 
-export const adminDb = getFirestore(app);
-export const adminAuth = getAuth(app);
+export const getAdminDb = (): Firestore => getFirestore(getAdminApp());
+export const getAdminAuth = () => getAuth(getAdminApp());
 
 export const getRequestRole = async (req: VercelRequest): Promise<string | null> => {
   const authHeader = req.headers.authorization;
   if (!authHeader?.startsWith('Bearer ')) return null;
 
-  const decoded = await adminAuth.verifyIdToken(authHeader.slice('Bearer '.length));
-  const profileSnap = await adminDb.collection('Users').doc(decoded.uid).get();
+  const decoded = await getAdminAuth().verifyIdToken(authHeader.slice('Bearer '.length));
+  const profileSnap = await getAdminDb().collection('Users').doc(decoded.uid).get();
   if (!profileSnap.exists) return null;
 
   const profile = profileSnap.data();

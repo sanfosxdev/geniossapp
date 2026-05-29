@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { adminDb, cleanUndefinedDeep, getRequestRole, roleCanManageOrders } from './_firebaseAdmin';
+import { cleanUndefinedDeep, getAdminDb, getRequestRole, roleCanManageOrders } from './_firebaseAdmin';
 import { CreatedBy, OrderStatus } from '../types';
 
 const allowedOrderTypes = new Set(['pickup', 'delivery', 'dine-in']);
@@ -67,10 +67,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         : (payload.createdBy === CreatedBy.WHATSAPP_ASSISTANT ? CreatedBy.WHATSAPP_ASSISTANT : CreatedBy.WEB_ASSISTANT),
     });
 
-    await adminDb.collection('Orders').doc(id).set(order);
+    await getAdminDb().collection('Orders').doc(id).set(order);
     return res.status(201).json(order);
   } catch (error) {
+    console.error('Error creating order:', error);
     const message = error instanceof Error ? error.message : 'No se pudo crear el pedido.';
-    return res.status(400).json({ error: message });
+    return res.status(500).json({ error: message });
   }
 }

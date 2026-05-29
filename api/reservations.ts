@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { adminDb, cleanUndefinedDeep, getRequestRole, roleCanManageReservations } from './_firebaseAdmin';
+import { cleanUndefinedDeep, getAdminDb, getRequestRole, roleCanManageReservations } from './_firebaseAdmin';
 import { CreatedBy, ReservationStatus } from '../types';
 
 const isObject = (value: unknown): value is Record<string, unknown> => (
@@ -54,10 +54,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         : (payload.createdBy === CreatedBy.WHATSAPP_ASSISTANT ? CreatedBy.WHATSAPP_ASSISTANT : CreatedBy.WEB_ASSISTANT),
     });
 
-    await adminDb.collection('Reservations').doc(id).set(reservation);
+    await getAdminDb().collection('Reservations').doc(id).set(reservation);
     return res.status(201).json(reservation);
   } catch (error) {
+    console.error('Error creating reservation:', error);
     const message = error instanceof Error ? error.message : 'No se pudo crear la reserva.';
-    return res.status(400).json({ error: message });
+    return res.status(500).json({ error: message });
   }
 }

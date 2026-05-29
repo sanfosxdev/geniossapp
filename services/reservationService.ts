@@ -26,6 +26,17 @@ const cleanUndefined = (obj: any) => {
   return newObj;
 };
 
+const readApiResponse = async (response: Response): Promise<any> => {
+    const text = await response.text();
+    if (!text) return {};
+
+    try {
+        return JSON.parse(text);
+    } catch {
+        return { error: text };
+    }
+};
+
 export const updateCaches = (reservations: Reservation[]) => {
     reservationsCache = reservations.sort((a, b) => new Date(a.reservationTime).getTime() - new Date(b.reservationTime).getTime());
     localStorage.setItem(RESERVATIONS_STORAGE_KEY, JSON.stringify(reservationsCache));
@@ -138,7 +149,7 @@ export const addReservation = async (reservationData: Omit<Reservation, 'id' | '
             body: JSON.stringify(cleanUndefined(reservationData)),
         });
 
-        const data = await response.json();
+        const data = await readApiResponse(response);
         if (!response.ok) {
             throw new Error(data.error || 'Error al guardar reserva en la nube.');
         }

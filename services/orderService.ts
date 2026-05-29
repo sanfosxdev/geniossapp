@@ -18,6 +18,17 @@ const cleanUndefined = (obj: any) => {
   return newObj;
 };
 
+const readApiResponse = async (response: Response): Promise<any> => {
+    const text = await response.text();
+    if (!text) return {};
+
+    try {
+        return JSON.parse(text);
+    } catch {
+        return { error: text };
+    }
+};
+
 export const updateCaches = (orders: Order[]) => {
     ordersCache = orders.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
     localStorage.setItem(ORDERS_STORAGE_KEY, JSON.stringify(ordersCache));
@@ -79,7 +90,7 @@ export const saveOrder = async (orderData: Omit<Order, 'id' | 'status' | 'create
           body: JSON.stringify(cleanUndefined(orderData)),
       });
 
-      const data = await response.json();
+      const data = await readApiResponse(response);
       if (!response.ok) {
           throw new Error(data.error || 'Error al guardar pedido en la nube.');
       }
