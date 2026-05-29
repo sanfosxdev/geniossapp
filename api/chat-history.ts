@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { cleanUndefinedDeep, getAdminDb } from './_firebaseAdmin';
+import { cleanUndefinedDeep, getAdminDb } from './_firebaseAdmin.js';
 
 const isObject = (value: unknown): value is Record<string, unknown> => (
   typeof value === 'object' && value !== null && !Array.isArray(value)

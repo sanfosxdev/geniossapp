@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { cleanUndefinedDeep, getAdminDb, getRequestRole, roleCanManageReservations } from './_firebaseAdmin';
-import { CreatedBy, ReservationStatus } from '../types';
+import { cleanUndefinedDeep, getAdminDb, getRequestRole, roleCanManageReservations } from './_firebaseAdmin.js';
+import { CreatedBy, ReservationStatus } from '../types.js';
 
 const isObject = (value: unknown): value is Record<string, unknown> => (
   typeof value === 'object' && value !== null && !Array.isArray(value)

@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { cleanUndefinedDeep, getAdminDb, getRequestRole, roleCanManageOrders } from './_firebaseAdmin';
-import { CreatedBy, OrderStatus } from '../types';
+import { cleanUndefinedDeep, getAdminDb, getRequestRole, roleCanManageOrders } from './_firebaseAdmin.js';
+import { CreatedBy, OrderStatus } from '../types.js';
 
 const allowedOrderTypes = new Set(['pickup', 'delivery', 'dine-in']);
 const allowedPaymentMethods = new Set(['Efectivo', 'Credito', 'Transferencia']);
