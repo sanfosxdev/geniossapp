@@ -35,18 +35,6 @@ export const fetchAndCachePromotions = async (): Promise<Promotion[]> => {
     try {
         const querySnapshot = await getDocs(collection(db, SHEET_NAME));
         
-        if (querySnapshot.empty && getPromotionsFromCache().length > 0) {
-            console.log(`La colección '${SHEET_NAME}' en Firebase está vacía. Intentando sembrar desde localStorage.`);
-            const localData = getPromotionsFromCache();
-            const batch = writeBatch(db);
-            localData.forEach(item => {
-                const docRef = doc(db, SHEET_NAME, item.id);
-                batch.set(docRef, item);
-            });
-            await batch.commit();
-            return localData;
-        }
-
         const promotions = querySnapshot.docs.map(doc => doc.data() as Promotion);
         updateCaches(promotions);
         return promotions;

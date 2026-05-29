@@ -61,18 +61,6 @@ export const fetchAndCacheCustomerCategories = async (): Promise<CustomerCategor
     try {
         const querySnapshot = await getDocs(collection(db, SHEET_NAME));
         
-        if (querySnapshot.empty && getCustomerCategoriesFromCache().length > 0) {
-            console.log(`Firebase collection '${SHEET_NAME}' is empty. Seeding from local storage.`);
-            const localData = getCustomerCategoriesFromCache();
-            const batch = writeBatch(db);
-            localData.forEach(item => {
-                const docRef = doc(db, SHEET_NAME, item.id);
-                batch.set(docRef, item);
-            });
-            await batch.commit();
-            return localData;
-        }
-
         const categories = querySnapshot.docs.map(doc => doc.data() as CustomerCategory);
         updateCaches(categories);
         return categories;

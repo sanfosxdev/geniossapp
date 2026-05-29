@@ -63,18 +63,6 @@ export const fetchAndCacheCategories = async (): Promise<Category[]> => {
     try {
         const querySnapshot = await getDocs(collection(db, SHEET_NAME));
         
-        if (querySnapshot.empty && getCategoriesFromCache().length > 0) {
-            console.log(`La colección '${SHEET_NAME}' en Firebase está vacía. Intentando sembrar desde localStorage.`);
-            const localData = getCategoriesFromCache();
-            const batch = writeBatch(db);
-            localData.forEach(item => {
-                const docRef = doc(db, SHEET_NAME, item.id);
-                batch.set(docRef, item);
-            });
-            await batch.commit();
-            return localData;
-        }
-
         const categoriesFromFirebase = querySnapshot.docs.map(doc => doc.data() as Category);
         updateCaches(categoriesFromFirebase);
         return categoriesFromFirebase;

@@ -116,18 +116,6 @@ export const fetchAndCacheReservations = async (): Promise<Reservation[]> => {
     try {
         const querySnapshot = await getDocs(collection(db, SHEET_NAME));
         
-        if (querySnapshot.empty && getReservationsFromCache().length > 0) {
-            console.log(`Firebase collection '${SHEET_NAME}' is empty. Seeding from local storage.`);
-            const localData = getReservationsFromCache();
-            const batch = writeBatch(db);
-            localData.forEach(item => {
-                const docRef = doc(db, SHEET_NAME, item.id);
-                batch.set(docRef, item);
-            });
-            await batch.commit();
-            return localData;
-        }
-
         const reservations = querySnapshot.docs.map(doc => doc.data() as Reservation);
         updateCaches(reservations);
         return reservations;

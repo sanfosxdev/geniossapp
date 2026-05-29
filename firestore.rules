@@ -44,6 +44,11 @@ service cloud.firestore {
       return signedIn() && request.auth.uid == userId;
     }
 
+    function canUpdateOwnLastAccess(userId) {
+      return canReadOwnUser(userId)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['lastAccess']);
+    }
+
     match /Products/{documentId} {
       allow read: if true;
       allow write: if canAdmin();
@@ -107,7 +112,8 @@ service cloud.firestore {
 
     match /Users/{userId} {
       allow get: if canReadOwnUser(userId) || canAdmin();
-      allow list, create, update, delete: if canAdmin();
+      allow update: if canAdmin() || canUpdateOwnLastAccess(userId);
+      allow list, create, delete: if canAdmin();
     }
 
     match /SliceBotMetrics/{documentId} {

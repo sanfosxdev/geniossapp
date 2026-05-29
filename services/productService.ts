@@ -88,18 +88,6 @@ export const fetchAndCacheProducts = async (): Promise<Product[]> => {
     try {
         const querySnapshot = await getDocs(collection(db, SHEET_NAME));
         
-        if (querySnapshot.empty && getProductsFromCache().length > 0) {
-            console.log(`La colección '${SHEET_NAME}' en Firebase está vacía. Intentando sembrar desde localStorage.`);
-            const localData = getProductsFromCache();
-            const batch = writeBatch(db);
-            localData.forEach(item => {
-                const docRef = doc(db, SHEET_NAME, item.id);
-                batch.set(docRef, item);
-            });
-            await batch.commit();
-            return localData;
-        }
-
         const products = querySnapshot.docs.map(doc => doc.data() as Product);
         updateCaches(products);
         return products;

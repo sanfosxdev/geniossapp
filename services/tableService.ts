@@ -62,18 +62,6 @@ export const fetchAndCacheTables = async (): Promise<Table[]> => {
     try {
         const querySnapshot = await getDocs(collection(db, SHEET_NAME));
         
-        if (querySnapshot.empty && getTablesFromCache().length > 0) {
-            console.log(`Firebase collection '${SHEET_NAME}' is empty. Seeding from local storage.`);
-            const localData = getTablesFromCache();
-            const batch = writeBatch(db);
-            localData.forEach(item => {
-                const docRef = doc(db, SHEET_NAME, item.id);
-                batch.set(docRef, item);
-            });
-            await batch.commit();
-            return localData;
-        }
-
         const tables = querySnapshot.docs.map(doc => doc.data() as Table);
         updateCaches(tables);
         return tables;

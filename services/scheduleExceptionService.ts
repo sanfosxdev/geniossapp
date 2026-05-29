@@ -34,18 +34,6 @@ export const fetchAndCacheScheduleExceptions = async (): Promise<ScheduleExcepti
     try {
         const querySnapshot = await getDocs(collection(db, SHEET_NAME));
         
-        if (querySnapshot.empty && getScheduleExceptionsFromCache().length > 0) {
-            console.log(`Firebase collection '${SHEET_NAME}' is empty. Seeding from local storage.`);
-            const localData = getScheduleExceptionsFromCache();
-            const batch = writeBatch(db);
-            localData.forEach(item => {
-                const docRef = doc(db, SHEET_NAME, item.id);
-                batch.set(docRef, item);
-            });
-            await batch.commit();
-            return localData;
-        }
-
         const exceptions = querySnapshot.docs.map(doc => doc.data() as ScheduleException);
         updateCaches(exceptions);
         return exceptions;

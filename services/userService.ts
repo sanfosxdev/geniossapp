@@ -35,18 +35,6 @@ export const fetchAndCacheUsers = async (): Promise<User[]> => {
     try {
         const querySnapshot = await getDocs(collection(db, SHEET_NAME));
         
-        if (querySnapshot.empty && getUsersFromCache().length > 0) {
-            console.log(`Firebase collection '${SHEET_NAME}' is empty. Seeding from local storage.`);
-            const localData = getUsersFromCache();
-            const batch = writeBatch(db);
-            localData.forEach(item => {
-                const docRef = doc(db, SHEET_NAME, item.id);
-                batch.set(docRef, item);
-            });
-            await batch.commit();
-            return localData;
-        }
-
         const users = querySnapshot.docs.map(doc => doc.data() as User);
         updateCaches(users);
         return users;

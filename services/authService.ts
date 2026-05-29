@@ -4,7 +4,7 @@ import {
   signOut,
   type User as FirebaseUser,
 } from 'firebase/auth';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { doc, getDoc, getDocFromServer, setDoc } from 'firebase/firestore';
 import { auth, db } from './firebase';
 import type { User } from '../types';
 
@@ -23,10 +23,25 @@ const mapAuthUser = (user: FirebaseUser, profile: User | null = null): AuthUser 
 });
 
 export const fetchUserProfile = async (uid: string): Promise<User | null> => {
-  const profileSnap = await getDoc(doc(db, 'Users', uid));
-  if (!profileSnap.exists()) return null;
-  const profile = profileSnap.data() as User;
-  return profile.active === false ? null : { ...profile, id: uid };
+  const profileRef = doc(db, 'Users', uid);
+  let lastError: unknown = null;
+
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    try {
+      const profileSnap = attempt === 0
+        ? await getDocFromServer(profileRef)
+        : await getDoc(profileRef);
+
+      if (!profileSnap.exists()) return null;
+      const profile = profileSnap.data() as User;
+      return profile.active === false ? null : { ...profile, id: uid };
+    } catch (error) {
+      lastError = error;
+      await new Promise(resolve => setTimeout(resolve, 500 * (attempt + 1)));
+    }
+  }
+
+  throw lastError;
 };
 
 export const subscribeToAuthState = (
@@ -58,9 +73,11 @@ export const loginWithEmailAndPassword = async (
     throw new Error('auth/missing-profile');
   }
 
-  await setDoc(doc(db, 'Users', credentials.user.uid), {
+  setDoc(doc(db, 'Users', credentials.user.uid), {
     lastAccess: new Date().toISOString(),
-  }, { merge: true });
+  }, { merge: true }).catch((error) => {
+    console.warn('No se pudo actualizar lastAccess del usuario:', error);
+  });
 
   return mapAuthUser(credentials.user, profile);
 };
