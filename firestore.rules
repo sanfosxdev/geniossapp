@@ -1,0 +1,131 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function userPath() {
+      return /databases/$(database)/documents/Users/$(request.auth.uid);
+    }
+
+    function hasProfile() {
+      return signedIn() && exists(userPath());
+    }
+
+    function profile() {
+      return get(userPath()).data;
+    }
+
+    function activeRole(roles) {
+      return hasProfile()
+        && profile().active == true
+        && profile().role in roles;
+    }
+
+    function canDev() {
+      return activeRole(['DEV']);
+    }
+
+    function canAdmin() {
+      return activeRole(['DEV', 'ADMIN']);
+    }
+
+    function canFloor() {
+      return activeRole(['DEV', 'ADMIN', 'MOZO']);
+    }
+
+    function canKitchen() {
+      return activeRole(['DEV', 'ADMIN', 'MOZO', 'COCINA']);
+    }
+
+    function canReadOwnUser(userId) {
+      return signedIn() && request.auth.uid == userId;
+    }
+
+    match /Products/{documentId} {
+      allow read: if true;
+      allow write: if canAdmin();
+    }
+
+    match /Categories/{documentId} {
+      allow read: if true;
+      allow write: if canAdmin();
+    }
+
+    match /Promotions/{documentId} {
+      allow read: if true;
+      allow write: if canAdmin();
+    }
+
+    match /Schedule/{documentId} {
+      allow read: if true;
+      allow write: if canAdmin();
+    }
+
+    match /ScheduleExceptions/{documentId} {
+      allow read: if true;
+      allow write: if canAdmin();
+    }
+
+    match /ReservationSettings/{documentId} {
+      allow read: if true;
+      allow write: if canAdmin();
+    }
+
+    match /Tables/{documentId} {
+      allow read: if true;
+      allow write: if canFloor();
+    }
+
+    match /AppSettings/{documentId} {
+      allow read: if true;
+      allow write: if canAdmin();
+    }
+
+    match /Orders/{documentId} {
+      allow read: if canKitchen();
+      allow create, update: if canKitchen();
+      allow delete: if canAdmin();
+    }
+
+    match /Reservations/{documentId} {
+      allow read, create, update: if canFloor();
+      allow delete: if canAdmin();
+    }
+
+    match /Customers/{documentId} {
+      allow read, create, update: if canFloor();
+      allow delete: if canAdmin();
+    }
+
+    match /CustomerCategories/{documentId} {
+      allow read: if canFloor();
+      allow write: if canAdmin();
+    }
+
+    match /Users/{userId} {
+      allow get: if canReadOwnUser(userId) || canAdmin();
+      allow list, create, update, delete: if canAdmin();
+    }
+
+    match /SliceBotMetrics/{documentId} {
+      allow read: if canAdmin();
+      allow write: if canAdmin();
+    }
+
+    match /ChatHistory/{documentId} {
+      allow read: if canAdmin();
+      allow write: if canAdmin();
+    }
+
+    match /WhastappAssistant_logs/{documentId} {
+      allow read, write: if canAdmin();
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
